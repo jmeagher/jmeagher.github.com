@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+body {
+  font: 10px sans-serif;
+}
+
+.title {
+  font: 18px sans-serif;
+}
+
+.container {
+  margin-left:auto;
+  margin-right:auto;
+  width:100%;
+}
+
+.legend {
+  margin-top:5px;
+  font: 14px sans-serif;
+}
+
+.footer {
+  margin-top:10px;
+}
+
+.axis path,
+.axis {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.line {
+  fill: none;
+  stroke-width: 1.5px;
+}
+
+.rides {
+  stroke: steelblue;
+  color: steelblue;
+}
+.time {
+  stroke: firebrick;
+  color: firebrick;
+}
+.bikes {
+  stroke: darkorange;
+  color: darkorange;
+}
+.terminals {
+  stroke: orchid;
+  color: orchid;
+}
+
+</style>
+<title>Capital Bikeshare monthly stats</title>
+
+  <div class="title">Capital Bikeshare monthly stats</div>
+  <div class="legend">
+    <span class="rides">Rides (thousands)</span>
+    <span class="time">Time (thousands of hours)</span>
+    <span class="bikes">Bikes</span>
+    <span class="terminals">Terminals</span>
+  </div>
+  <div id="container"></div>
+  <div class="footer">
+    Data from <a href="http://www.capitalbikeshare.com/system-data">Capital Bikeshare</a>,
+    visualization library <a href="http://d3js.org/">D3</a>,
+    code for this <a href="https://github.com/jmeagher/capital-bikeshare/">on Github</a>,
+  </div>
+
+<script src="http://d3js.org/d3.v3.js"></script>
+<script>
+
+var margin = {top: 20, right: 50, bottom: 30, left: 50},
+    width = Math.min(960, window.innerWidth-50) - margin.left - margin.right,
+    height = Math.min(500, window.innerHeight-50) - margin.top - margin.bottom;
+
+var parseDate = d3.time.format("%Y-%m").parse;
+
+
+var x = d3.time.scale()
+    .range([0, width]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yRides = d3.scale.linear()
+    .range([height, 0]);
+var yTime = d3.scale.linear()
+    .range([height, 0]);
+var yBikes = d3.scale.linear()
+    .range([height, 0]);
+var yTerminals = d3.scale.linear()
+    .range([height, 0]);
+
+var yRidesAxis = d3.svg.axis()
+    .scale(yRides)
+    .orient("left");
+var yTimeAxis = d3.svg.axis()
+    .scale(yTime)
+    .orient("right");
+var yBikesAxis = d3.svg.axis()
+    .scale(yBikes)
+    .orient("right");
+var yTerminalsAxis = d3.svg.axis()
+    .scale(yTerminals)
+    .orient("left");
+
+var lineRides = d3.svg.line()
+    .x(function(d) { return x(d.month); })
+    .y(function(d) { return yRides(d.rides); });
+var lineTime = d3.svg.line()
+    .x(function(d) { return x(d.month); })
+    .y(function(d) { return yTime(d.total_time); });
+var lineBikes = d3.svg.line()
+    .x(function(d) { return x(d.month); })
+    .y(function(d) { return yBikes(d.bikes); });
+var lineTerminals = d3.svg.line()
+    .x(function(d) { return x(d.month); })
+    .y(function(d) { return yTerminals(d.terminals); });
+
+var svg = d3.select("#container").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var cache = [];
+
+d3.csv("data/monthly.txt", function(error, data) {
+    cache = data;
+  data.forEach(function(d) {
+    d.month = parseDate(d.month);
+    d.rides = +d.rides/1000;
+    d.total_sec = +d.total_sec;
+    d.total_time = +(d.total_sec / 3600.0/1000);
+    d.bikes = +d.bike_count;
+    d.terminals = +d.terminal_count;
+  });
+  x.domain(d3.extent(data, function(d) { return d.month; }));
+  yRides.domain(d3.extent(data, function(d) { return d.rides; }));
+  yTime.domain(d3.extent(data, function(d) { return d.total_time; }));
+  yBikes.domain(d3.extent(data, function(d) { return d.bikes; }));
+  yTerminals.domain(d3.extent(data, function(d) { return d.terminals; }));
+
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .attr("class", "axis rides")
+      .call(yRidesAxis);
+  svg.append("g")
+      .attr("class", "axis time")
+      .attr("transform", "translate(" + width + ",0)")
+      .call(yTimeAxis);
+  svg.append("g")
+      .attr("class", "y axis")
+      .attr("class", "axis bikes")
+      .call(yBikesAxis);
+  svg.append("g")
+      .attr("class", "axis terminals")
+      .attr("transform", "translate(" + width + ",0)")
+      .call(yTerminalsAxis);
+
+  svg.append("path")
+      .datum(data)
+      .attr("class", "line rides")
+      .attr("d", lineRides);
+  svg.append("path")
+      .datum(data)
+      .attr("class", "line time")
+      .attr("d", lineTime);
+  svg.append("path")
+      .datum(data)
+      .attr("class", "line bikes")
+      .attr("d", lineBikes);
+  svg.append("path")
+      .datum(data)
+      .attr("class", "line terminals")
+      .attr("d", lineTerminals);
+});
+
+</script>
+
